@@ -11,23 +11,28 @@
  * - Библиотека для работы с ZIP
  * - Config
  * - MVC (Yii2)
- * - Безопасность temp
+ * - Безопасность temp (права на папки, соответствие типу)
  * - Консольное приложение
+ * - Тесты
 */
 
-const UPLOAD_FILE_NAME = "../upload/Document.xml";
+const DIR_TMP = "./temp/";
 
 class Fix
 {
     public $fileName;
+    public $tmpFileName;
+    public $newFileName;
+    public $rndDirName;
     public $content;
     public $pattern = '/(䩴[^"]+)/';
     public $replace = "";
 
 
-    public function __construct($fileName = UPLOAD_FILE_NAME)
+    public function __construct()
     {
-        $this->fileName = $fileName;
+        $this->fileName = $_FILES['file']['name'];
+        $this->tmpFileName = $_FILES['file']['tmp_name'];
         $this->run();
     }
 
@@ -35,45 +40,104 @@ class Fix
     {
         // file — Читает содержимое файла и помещает его в массив
         // https://secure.php.net/manual/ru/function.file.php
-        $this->content = file($this->fileName);
-        // file_get_contents — Читает содержимое файла в строку
-        // https://secure.php.net/manual/ru/function.file-get-contents.php
-//        $this->content = file_get_contents($this->fileName);
+        $this->content = file($this->rndDirName . "Document.old");
     }
 
     public function fix()
     {
-        // mb_ereg_replace
-//        $pattern = '/(䩴..............)/'; // Work
-//        $pattern = '/(䩴\W+)/';
-//        $input = $this->content;
-//        $replace = 'PRIVET" ';
         // preg_replace — Выполняет поиск и замену по регулярному выражению
         // https://secure.php.net/manual/ru/function.preg-replace.php
         $this->content = preg_replace($this->pattern, $this->replace, $this->content);
-        // preg_grep — Возвращает массив вхождений, которые соответствуют шаблону
-        // https://secure.php.net/manual/ru/function.preg-grep.php
-//        $this->content = preg_grep($pattern, $input);
     }
 
     public function writeFile()
     {
-        $fileName = pathinfo($this->fileName);
-        $newFileName = "./temp/" . $fileName["filename"] . "_fix." . $fileName["extension"];
-        file_put_contents($newFileName, $this->content);
+        // $fileName = pathinfo($this->rndDirName . "Document.xml");
+        // $newFileName = $this->rndDirName . $fileName["filename"] . "_fix." . $fileName["extension"];
+        file_put_contents($this->rndDirName . "Document.xml", $this->content);
+    }
+
+    public function rndDirCreate($fileName)
+    {
+        $this->rndDirName = DIR_TMP . md5($fileName . time()) . "/";
+        mkdir($this->rndDirName, 644);
+    }
+
+    public function unZip()
+    {
+        $zip = new ZipArchive;
+        $res = $zip->open($this->newFileName);
+        if ($res === true) {
+            $zip->extractTo($this->rndDirName, array('Document.xml'));
+            $zip->close();
+            echo '<br>Разархивация прошла успешно!';
+        } else {
+            echo 'Ошибка разархивации!';
+        }
+    }
+
+    public function replaceZip()
+    {
+        $zip = new ZipArchive;
+        $res = $zip->open($this->newFileName);
+        if ($res === true) {
+            // Удалить старый файл из Zip
+            $zip->deleteName("Document.xml");
+            // Добавить исправленный файл в Zip
+            $zip->addFile($this->rndDirName . "Document.xml", "Document.xml");
+            $zip->close();
+            echo '<br>Архивация прошла успешно!';
+        } else {
+            echo 'Ошибка архивации!';
+        }
+    }
+
+    public function viewUrl() {
+        echo '<br>Исправление файла прошло успешно!
+        <br>Ссылка для скачивания (доступно 24 часа):
+        <a href="' . $this->newFileName . '">' . $this->newFileName . '</a>
+        <hr>
+        <a href="../../">Загрузить ещё 1 файл!</a> 
+        ';
     }
 
     public function run()
     {
+        // Создаем рандомный каталог в temp
+        $this->rndDirCreate($this->fileName);
+        $this->newFileName = $this->rndDirName . $this->fileName;
+
+        // В него копируем оригинальный файл MMAP
+        copy($this->tmpFileName, $this->newFileName);
+
+        // Извлекаем Document.xml из MMAP
+        $this->unZip();
+        rename($this->rndDirName . "Document.xml", $this->rndDirName . "Document.old");
+
+        // Вносим изменения в Document.xml
         $this->readFile();
         $this->fix();
         $this->writeFile();
-        // implode — Объединяет элементы массива в строку
-        // https://secure.php.net/manual/ru/function.implode.php
-        echo implode($this->content);
-//                var_dump($this->content);
+
+        // Заменям старый файл на исправленный
+        $this->replaceZip();
+
+        // Отображаем ссылку для скачивания
+        $this->viewUrl();
     }
 
 }
 
-$app = new Fix(UPLOAD_FILE_NAME);
+if ($_SERVER['REQUEST_METHOD'] == "POST" && $_FILES['file']['type'] == "application/vnd.mindjet.mindmanager") {
+//    var_dump($_SERVER['REQUEST_METHOD']);
+//    var_dump($_FILES);
+    $app = new Fix();
+} else {
+    echo '
+        <b>Загрузка MindMap файла (*.mmap):</b>
+            <form action="" enctype="multipart/form-data" method="post">
+                <input type="file" name="file"/>
+                <input type="submit" value="Загрузить"/>
+            </form>
+    ';
+}

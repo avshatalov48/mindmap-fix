@@ -1,6 +1,6 @@
 ## MindMap fix "Illegal xml character" error
 
-### How to find source of "(1:133819) Illegal xml character" error?
+### How to find source of "(1:133819) Illegal xml character" error? (Manual method)
 https://community.mindjet.com/mindjet/topics/how-to-find-source-of-1-133819-illegal-xml-character-error
 
 1. Change the file extension of the Map from .mmap to .zip
