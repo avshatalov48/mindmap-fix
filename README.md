@@ -1,6 +1,10 @@
 ## MindMap fix "Illegal xml character" error
 
-### How to find source of "(1:133819) Illegal xml character" error? (Manual method)
+Данная утилита была написана мною для автоматизациии исправления ошибки "Illegal xml character", которая возникает при работе с mindmap-картами в Mindjet MindManager 10 for Mac. На официальном сайте даётся краткая инструкция по ручному исправлению ошибки (приведена ниже), но это далеко не всегда удобно, т.к. ошибка достаточно часто возникает и не позволяет каким-либо образом открыть готовую карту, даже в частичном виде. В перспективе планирую выложить скрипт на веб-сервер для помощи в решении сложившейся проблемы.
+
+P.S. На данный момент код написан очень коряво, в первую очередь писался для быстрого решения задачи, в дальнейшем планирую провести рефакторинг, сделать в качестве отдельного модуля под Yii2.
+
+#### How to find source of "(1:133819) Illegal xml character" error? (Manual method)
 https://community.mindjet.com/mindjet/topics/how-to-find-source-of-1-133819-illegal-xml-character-error
 
 1. Change the file extension of the Map from .mmap to .zip

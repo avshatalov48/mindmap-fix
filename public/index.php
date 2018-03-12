@@ -124,12 +124,12 @@ class Fix
         $this->unZip();
         rename($this->rndDirName . "Document.xml", $this->rndDirName . "Document.old");
 
-        // Вносим изменения в Document.xml
+        // Создаем новый исправленный Document.xml
         $this->readFile();
         $this->fix();
         $this->writeFile();
 
-        // Заменям старый файл на исправленный
+        // Заменям старый файл Document.xml на исправленный в MMAP
         $this->replaceZip();
 
         // Отображаем текст и ссылку для скачивания
